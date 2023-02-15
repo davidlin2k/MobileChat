@@ -31,6 +31,9 @@ struct MessageView: View {
                     .frame(width: 40, height: 40, alignment: .center)
                     .cornerRadius(20)
             }
+            else {
+                Spacer()
+            }
         }
         .background(.clear)
     }

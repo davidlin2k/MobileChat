@@ -17,14 +17,17 @@ class Chat: ObservableObject {
     
     init(messages: [Message]) {
         self.messages = messages
+        
+        self.messages = MessageDataStore.shared.getAllMessages()
     }
     
     func sendMessage(_ chatMessage: Message) {
+        MessageDataStore.shared.insert(message: chatMessage)
         messages.append(chatMessage)
         
         let responseMessage = Message(content: "", user: User(name: "GPT-3", avatar: ""))
         
-        subscription = GPTService.generate(prompt: chatMessage.content)
+        subscription = GPTService.generate(prompt: "Q: \(chatMessage.content) A:")
             .receive(on: RunLoop.main)
             .sink(receiveCompletion: { completion in
                 self.subscription?.cancel()
@@ -36,8 +39,8 @@ class Chat: ObservableObject {
                     responseMessage.content = error.localizedDescription
                 }
             }, receiveValue: { generatedText in
-                print(generatedText)
-                responseMessage.updateContent(content: generatedText.trimmingCharacters(in: .whitespacesAndNewlines)) 
+                responseMessage.updateContent(content: generatedText.trimmingCharacters(in: .whitespacesAndNewlines))
+                MessageDataStore.shared.insert(message: responseMessage)
             })
         
         messages.append(responseMessage)
