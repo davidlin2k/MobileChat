@@ -13,7 +13,7 @@ class Chat: ObservableObject {
     let GPTService = RealGPT3Service()
     
     @Published var messages: [Message]
-    private var subscription: AnyCancellable?
+    private var subscriptions: Set<AnyCancellable> = []
     
     init(messages: [Message]) {
         self.messages = messages
@@ -27,10 +27,9 @@ class Chat: ObservableObject {
         
         let responseMessage = Message(content: "", user: User(name: "GPT-3", avatar: ""))
         
-        subscription = GPTService.generate(prompt: "Q: \(chatMessage.content) A:")
+        GPTService.generate(prompt: "Q: \(chatMessage.content) A:")
             .receive(on: RunLoop.main)
             .sink(receiveCompletion: { completion in
-                self.subscription?.cancel()
                 
                 switch completion {
                 case .finished:
@@ -42,6 +41,7 @@ class Chat: ObservableObject {
                 responseMessage.updateContent(content: generatedText.trimmingCharacters(in: .whitespacesAndNewlines))
                 MessageDataStore.shared.insert(message: responseMessage)
             })
+            .store(in: &subscriptions)
         
         messages.append(responseMessage)
     }
